@@ -1,0 +1,20 @@
+# Ignorar a pasta 'venv' (ambiente virtual)
+venv/
+
+# Ignorar a pasta 'reports' e todo o seu conteúdo
+reports/
+
+# Ignorar arquivos compilados do Python
+__pycache__/
+*.py[cod]
+
+# Ignorar arquivos de logs
+*.log
+
+# Ignorar arquivos temporários do sistema operacional
+.DS_Store
+Thumbs.db
+
+# Ignorar outros arquivos e pastas que não precisam ser versionados
+.idea/
+.vscode/
