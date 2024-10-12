@@ -9,4 +9,4 @@ class ReportGenerator:
         """Gera um relatório JSON dos resultados do escaneamento, incluindo banners detalhados."""
         with open(filename, 'w') as report_file:
             json.dump(self.scan_results, report_file, indent=4)
-        print(f"Relatório gerado: {filename}")
+        print(f"\nRelatório gerado: {filename}")
