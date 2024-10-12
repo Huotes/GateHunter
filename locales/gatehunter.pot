@@ -1,0 +1,148 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2024-10-12 10:27-0300\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: gatehunter.py:57
+msgid "Arquivo 'ascii_art.txt' não encontrado."
+msgstr ""
+
+#: gatehunter.py:59
+#, python-brace-format
+msgid "Ocorreu um erro ao ler o arquivo 'ascii_art.txt': {error}"
+msgstr ""
+
+#: gatehunter.py:68
+msgid "Encerrando o programa..."
+msgstr ""
+
+#: gatehunter.py:96
+#, python-brace-format
+msgid ""
+"\n"
+"Resultados para {target}:"
+msgstr ""
+
+#: gatehunter.py:98
+#, python-brace-format
+msgid "Porta {port} aberta: {info}"
+msgstr ""
+
+#: gatehunter.py:100
+msgid ""
+"\n"
+"Escaneamento cancelado pelo usuário."
+msgstr ""
+
+#: gatehunter.py:105
+#, python-brace-format
+msgid "Escaneando todos os hosts ativos na rede {network}..."
+msgstr ""
+
+#: gatehunter.py:110
+#, python-brace-format
+msgid ""
+"\n"
+"Escaneando o host {host}..."
+msgstr ""
+
+#: gatehunter.py:113
+msgid ""
+"\n"
+"Processo cancelado pelo usuário."
+msgstr ""
+
+#: gatehunter.py:126
+msgid "GateHunter\n"
+msgstr ""
+
+#: gatehunter.py:128
+msgid "Escolha uma opção:"
+msgstr ""
+
+#: gatehunter.py:129
+msgid "Escanear um único IP ou DNS"
+msgstr ""
+
+#: gatehunter.py:130
+msgid "Descobrir e escanear todos os hosts ativos em uma rede"
+msgstr ""
+
+#: gatehunter.py:131
+msgid "Descobrir automaticamente a rede local e escanear todos os hosts"
+msgstr ""
+
+#: gatehunter.py:132
+msgid "Digite 'q' ou 'sair' para encerrar o programa."
+msgstr ""
+
+#: gatehunter.py:134
+msgid "Digite sua escolha (1, 2 ou 3): "
+msgstr ""
+
+#: gatehunter.py:141
+msgid "Digite o alvo (IP/DNS) ou 'voltar' para retornar: "
+msgstr ""
+
+#: gatehunter.py:147 gatehunter.py:177 gatehunter.py:205
+msgid ""
+"Deseja usar as portas comuns automaticamente? (s/n) ou 'voltar' para "
+"retornar: "
+msgstr ""
+
+#: gatehunter.py:157 gatehunter.py:187 gatehunter.py:215
+msgid ""
+"Digite as portas para escanear (separadas por vírgula, ex: 22,80,443) ou "
+"'voltar' para retornar: "
+msgstr ""
+
+#: gatehunter.py:164
+#, python-brace-format
+msgid ""
+"\n"
+"Iniciando escaneamento do alvo {target}...\n"
+msgstr ""
+
+#: gatehunter.py:166 gatehunter.py:196 gatehunter.py:224
+msgid ""
+"\n"
+"Pressione Enter para continuar..."
+msgstr ""
+
+#: gatehunter.py:171
+msgid "Digite a rede (ex: 192.168.1.0/24) ou 'voltar' para retornar: "
+msgstr ""
+
+#: gatehunter.py:194 gatehunter.py:222
+#, python-brace-format
+msgid ""
+"\n"
+"Iniciando escaneamento da rede {network}...\n"
+msgstr ""
+
+#: gatehunter.py:200
+msgid "Descobrindo automaticamente a rede local..."
+msgstr ""
+
+#: gatehunter.py:202
+#, python-brace-format
+msgid "Rede detectada: {network}"
+msgstr ""
+
+#: gatehunter.py:227
+msgid "Opção inválida. Por favor, escolha 1, 2 ou 3."
+msgstr ""
