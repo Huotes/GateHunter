@@ -3,6 +3,9 @@ from concurrent.futures import ThreadPoolExecutor
 from common.common_ports import COMMON_PORTS
 
 
+
+
+
 class PortScanner:
     def __init__(self, target, max_threads=100):
         self.target = target

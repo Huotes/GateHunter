@@ -12,7 +12,14 @@ from common.common_ports import get_common_ports
 
 def get_system_locale():
     """Obtém o idioma padrão do sistema."""
-    lang, _ = locale.getdefaultlocale()
+    import os
+
+    lang = None
+    for variable in ('LC_ALL', 'LC_CTYPE', 'LANG', 'LANGUAGE'):
+        lang = os.environ.get(variable)
+        if lang:
+            lang = lang.split('.')[0]
+            break
     if lang is None:
         lang = 'en_US'  # Padrão para inglês se não conseguir detectar
     return lang
@@ -64,10 +71,11 @@ def clear_console():
 
 def check_exit(input_value):
     """Verifica se o usuário quer sair ou voltar."""
-    if input_value.lower() in ["q", "sair", "quit", "exit"]:
+    input_value = input_value.lower()
+    if input_value in EXIT_COMMANDS:
         print(_("Encerrando o programa..."))
         exit()
-    elif input_value.lower() == "voltar":
+    elif input_value == BACK_COMMAND:
         return "voltar"
     else:
         return None
@@ -120,6 +128,13 @@ def main():
     lang = choose_language()
     setup_translation(lang)
 
+    # Definir comandos globais de controle após a tradução
+    global BACK_COMMAND, EXIT_COMMANDS, YES_OPTION, NO_OPTION
+    BACK_COMMAND = _("voltar").lower()
+    EXIT_COMMANDS = [_("q").lower(), _("sair").lower(), _("quit").lower(), _("exit").lower()]
+    YES_OPTION = _("s").lower()
+    NO_OPTION = _("n").lower()
+
     while True:
         clear_console()
         show_ascii_art()
@@ -138,28 +153,35 @@ def main():
 
         if choice == "1":
             while True:
-                target = input(_("Digite o alvo (IP/DNS) ou 'voltar' para retornar: "))
+                target = input(_("Digite o alvo (IP/DNS) ou '{back}' para retornar: ").format(back=BACK_COMMAND))
                 action = check_exit(target)
                 if action == "voltar":
                     break
 
                 use_common_ports = input(
-                    _("Deseja usar as portas comuns automaticamente? (s/n) ou 'voltar' para retornar: ")
+                    _("Deseja usar as portas comuns automaticamente? ({yes}/{no}) ou '{back}' para retornar: ").format(
+                        yes=YES_OPTION.upper(), no=NO_OPTION.lower(), back=BACK_COMMAND
+                    )
                 ).lower()
                 action = check_exit(use_common_ports)
                 if action == "voltar":
                     continue
 
-                if use_common_ports == "s":
+                if use_common_ports == YES_OPTION:
                     ports = get_common_ports()
                 else:
-                    ports_input = input(
-                        _("Digite as portas para escanear (separadas por vírgula, ex: 22,80,443) ou 'voltar' para retornar: ")
-                    )
-                    action = check_exit(ports_input)
-                    if action == "voltar":
-                        continue
-                    ports = list(map(int, ports_input.split(",")))
+                    while True:
+                        ports_input = input(
+                            _("Digite as portas para escanear (separadas por vírgula, ex: 22,80,443) ou '{back}' para retornar: ").format(back=BACK_COMMAND)
+                        )
+                        action = check_exit(ports_input)
+                        if action == "voltar":
+                            continue
+                        try:
+                            ports = list(map(int, ports_input.split(",")))
+                            break  # Sucesso na conversão, sai do loop
+                        except ValueError:
+                            print(_("Entrada inválida. Por favor, digite números separados por vírgula."))
 
                 print(_("\nIniciando escaneamento do alvo {target}...\n").format(target=target))
                 scan_single_target(target, ports)
@@ -168,28 +190,35 @@ def main():
 
         elif choice == "2":
             while True:
-                network = input(_("Digite a rede (ex: 192.168.1.0/24) ou 'voltar' para retornar: "))
+                network = input(_("Digite a rede (ex: 192.168.1.0/24) ou '{back}' para retornar: ").format(back=BACK_COMMAND))
                 action = check_exit(network)
                 if action == "voltar":
                     break
 
                 use_common_ports = input(
-                    _("Deseja usar as portas comuns automaticamente? (s/n) ou 'voltar' para retornar: ")
+                    _("Deseja usar as portas comuns automaticamente? ({yes}/{no}) ou '{back}' para retornar: ").format(
+                        yes=YES_OPTION.upper(), no=NO_OPTION.lower(), back=BACK_COMMAND
+                    )
                 ).lower()
                 action = check_exit(use_common_ports)
                 if action == "voltar":
                     continue
 
-                if use_common_ports == "s":
+                if use_common_ports == YES_OPTION:
                     ports = get_common_ports()
                 else:
-                    ports_input = input(
-                        _("Digite as portas para escanear (separadas por vírgula, ex: 22,80,443) ou 'voltar' para retornar: ")
-                    )
-                    action = check_exit(ports_input)
-                    if action == "voltar":
-                        continue
-                    ports = list(map(int, ports_input.split(",")))
+                    while True:
+                        ports_input = input(
+                            _("Digite as portas para escanear (separadas por vírgula, ex: 22,80,443) ou '{back}' para retornar: ").format(back=BACK_COMMAND)
+                        )
+                        action = check_exit(ports_input)
+                        if action == "voltar":
+                            continue
+                        try:
+                            ports = list(map(int, ports_input.split(",")))
+                            break
+                        except ValueError:
+                            print(_("Entrada inválida. Por favor, digite números separados por vírgula."))
 
                 print(_("\nIniciando escaneamento da rede {network}...\n").format(network=network))
                 scan_network(network, ports)
@@ -202,22 +231,29 @@ def main():
             print(_("Rede detectada: {network}").format(network=network))
 
             use_common_ports = input(
-                _("Deseja usar as portas comuns automaticamente? (s/n) ou 'voltar' para retornar: ")
+                _("Deseja usar as portas comuns automaticamente? ({yes}/{no}) ou '{back}' para retornar: ").format(
+                    yes=YES_OPTION.upper(), no=NO_OPTION.lower(), back=BACK_COMMAND
+                )
             ).lower()
             action = check_exit(use_common_ports)
             if action == "voltar":
                 continue
 
-            if use_common_ports == "s":
+            if use_common_ports == YES_OPTION:
                 ports = get_common_ports()
             else:
-                ports_input = input(
-                    _("Digite as portas para escanear (separadas por vírgula, ex: 22,80,443) ou 'voltar' para retornar: ")
-                )
-                action = check_exit(ports_input)
-                if action == "voltar":
-                    continue
-                ports = list(map(int, ports_input.split(",")))
+                while True:
+                    ports_input = input(
+                        _("Digite as portas para escanear (separadas por vírgula, ex: 22,80,443) ou '{back}' para retornar: ").format(back=BACK_COMMAND)
+                    )
+                    action = check_exit(ports_input)
+                    if action == "voltar":
+                        continue
+                    try:
+                        ports = list(map(int, ports_input.split(",")))
+                        break
+                    except ValueError:
+                        print(_("Entrada inválida. Por favor, digite números separados por vírgula."))
 
             print(_("\nIniciando escaneamento da rede {network}...\n").format(network=network))
             scan_network(network, ports)
