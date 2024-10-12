@@ -1,5 +1,5 @@
 PyQt5
 pymongo
-pymongo psycopg2-binary
+psycopg2-binary
 scapy
 netifaces
