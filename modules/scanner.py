@@ -13,11 +13,7 @@ class PortScanner:
         lines = banner.split("\r\n")
         filtered_info = {}
         for line in lines:
-            if (
-                line.startswith("Server:")
-                or line.startswith("X-Jenkins:")
-                or line.startswith("X-")
-            ):
+            if line.startswith("Server:"):
                 key, value = line.split(":", 1)
                 filtered_info[key.strip()] = value.strip()
         return filtered_info
@@ -25,23 +21,57 @@ class PortScanner:
     def extract_mysql_version(self, data):
         """Extrai a versão do servidor MySQL a partir do pacote de handshake."""
         try:
-            # Ignora os primeiros 4 bytes (cabeçalho do pacote)
             payload = data[4:]
-
-            # O primeiro byte do payload é a versão do protocolo
-            protocol_version = payload[0]
-            # A versão do servidor é uma string terminada em NUL que começa no byte 1 do payload
             nul_index = payload.find(b"\x00", 1)
             if nul_index == -1:
                 return "Desconhecida"
-
             server_version = payload[1:nul_index].decode("ascii", errors="replace")
             return server_version
+        except Exception:
+            return "Desconhecida"
+
+    def extract_postgresql_version(self):
+        """Extrai a versão do PostgreSQL usando o cliente psycopg2."""
+        try:
+            import psycopg2
+
+            conn = psycopg2.connect(
+                host=self.target,
+                port=5432,
+                user="postgres",
+                password="",
+                connect_timeout=2,
+            )
+            cur = conn.cursor()
+            cur.execute("SELECT version();")
+            version_info = cur.fetchone()
+            conn.close()
+            if version_info:
+                version = version_info[0]
+                version_number = version.split(" ")[1]  # Extrai o número da versão
+                return version_number
+            else:
+                return "Desconhecida"
         except Exception as e:
+            print(f"Erro ao extrair versão do PostgreSQL: {e}")
+            return "Desconhecida"
+
+    def extract_mongodb_version(self):
+        """Extrai a versão do MongoDB usando o cliente pymongo."""
+        try:
+            from pymongo import MongoClient
+
+            client = MongoClient(self.target, port=27017, serverSelectionTimeoutMS=2000)
+            server_info = client.server_info()
+            version = server_info.get("version", "Desconhecida")
+            client.close()
+            return version
+        except Exception as e:
+            print(f"Erro ao extrair versão do MongoDB: {e}")
             return "Desconhecida"
 
     def scan_port(self, port):
-        """Escaneia uma única porta e faz o banner grabbing, com tratamento especial para alguns serviços."""
+        """Escaneia uma única porta e faz o banner grabbing."""
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.settimeout(2)
         try:
@@ -49,11 +79,13 @@ class PortScanner:
             if result == 0:
                 service = COMMON_PORTS.get(port, "Unknown")
 
-                # Tentativa de banner grabbing específica para serviços conhecidos
+                # Tratamento específico para serviços conhecidos
                 if port in [80, 8080]:
                     try:
                         sock.send(b"HEAD / HTTP/1.0\r\n\r\n")
-                        banner = sock.recv(1024).decode("utf-8").strip()
+                        banner = (
+                            sock.recv(1024).decode("utf-8", errors="ignore").strip()
+                        )
                         filtered_banner = self.parse_http_banner(banner)
                         server_info = filtered_banner.get("Server", "Desconhecido")
                         return port, f"HTTP ({server_info})"
@@ -71,22 +103,44 @@ class PortScanner:
                     except:
                         return port, "MySQL"
 
+                elif port == 5432:
+                    version_info = self.extract_postgresql_version()
+                    return port, f"PostgreSQL {version_info}"
+
+                elif port == 27017:
+                    version_info = self.extract_mongodb_version()
+                    return port, f"MongoDB {version_info}"
+
                 elif port == 6379:
                     try:
-                        sock.send(b"PING\r\n")
-                        banner = sock.recv(1024).decode("utf-8").strip()
-                        return port, f"Redis ({banner})"
+                        sock.send(b"INFO\r\n")
+                        banner = sock.recv(1024).decode("utf-8", errors="ignore")
+                        version_line = [
+                            line
+                            for line in banner.split("\n")
+                            if "redis_version" in line
+                        ]
+                        if version_line:
+                            version = version_line[0].split(":")[1].strip()
+                            return port, f"Redis {version}"
+                        else:
+                            return port, "Redis"
                     except:
                         return port, "Redis"
 
-                elif port == 5432:
-                    return port, "PostgreSQL"
-
-                elif port == 27017:
-                    return port, "MongoDB"
-
                 else:
-                    return port, service
+                    # Tentar banner grabbing genérico
+                    try:
+                        sock.send(b"\r\n")
+                        banner = (
+                            sock.recv(1024).decode("utf-8", errors="ignore").strip()
+                        )
+                        if banner:
+                            return port, f"{service} ({banner})"
+                        else:
+                            return port, service
+                    except:
+                        return port, service
             else:
                 return None
         except socket.error:
@@ -108,5 +162,4 @@ class PortScanner:
                         open_ports[result[0]] = result[1]
         except KeyboardInterrupt:
             print("\nEscaneamento de portas cancelado pelo usuário.")
-            executor.shutdown(wait=False)
         return open_ports
