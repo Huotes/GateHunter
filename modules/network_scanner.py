@@ -1,67 +1,57 @@
-import logging
-import netifaces
 import ipaddress
+import logging
+from concurrent.futures import ThreadPoolExecutor
 
-from scapy.layers.inet import IP, ICMP
-from scapy.layers.l2 import ARP
-from scapy.sendrecv import sr1
+from scapy.all import ICMP, IP, sr1
 
 # Ajusta o nível de log do Scapy para suprimir avisos
 logging.getLogger("scapy.runtime").setLevel(logging.ERROR)
 
-def get_default_interface():
-    """Obtém a interface de rede padrão."""
-    gateways = netifaces.gateways()
-    default_gateway = gateways.get('default', {})
-    if netifaces.AF_INET in default_gateway:
-        return default_gateway[netifaces.AF_INET][1]
-    else:
-        return None
+# Configuração do logging
+logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(message)s')
+
 
 class NetworkScanner:
     """Classe para escanear a rede e descobrir hosts ativos."""
-    
-    def __init__(self, network, iface=None):
+
+    def __init__(self, network, timeout=1):
         """Inicializa o scanner com a rede fornecida."""
         self.network = network
-        self.iface = iface or get_default_interface()
-
-    def resolve_mac(self, ip):
-        """Resolve o endereço MAC do IP fornecido usando ARP."""
-        arp_request = ARP(pdst=ip)
-        arp_response = sr1(arp_request, timeout=1, verbose=0, iface=self.iface)
-        if arp_response:
-            return arp_response.hwsrc
-        else:
-            return None
+        self.timeout = timeout
 
     def ping_host(self, ip):
         """Envia um pacote ICMP (ping) para verificar se o host está ativo."""
-        # Pré-resolve o endereço MAC para evitar avisos
-        mac = self.resolve_mac(ip)
-        if mac is None:
-            # Não conseguiu resolver o MAC, host provavelmente inativo
-            return False
-        icmp_packet = IP(dst=ip) / ICMP()
-        response = sr1(icmp_packet, timeout=1, verbose=0)
-        if response is None:
-            return False
-        elif response.haslayer(ICMP):
-            icmp_type = response.getlayer(ICMP).type
-            if icmp_type == 0:
+        try:
+            icmp_packet = IP(dst=ip) / ICMP()
+            response = sr1(icmp_packet, timeout=self.timeout, verbose=0)
+            if response is not None and response.haslayer(ICMP):
                 return True
-        return False
+            return False
+        except PermissionError as e:
+            logging.error(f"Permissão negada ao tentar pingar {ip}: {e}")
+            return False
+        except Exception as e:
+            logging.error(f"Erro ao pingar {ip}: {e}")
+            return False
 
     def discover_hosts(self):
         """Descobre todos os hosts ativos na rede."""
         active_hosts = []
-        network = ipaddress.ip_network(self.network, strict=False)
-
         try:
-            for ip in network.hosts():
-                if self.ping_host(str(ip)):
-                    active_hosts.append(str(ip))
-                    print(f"Host ativo encontrado: {ip}")
-        except KeyboardInterrupt:
-            print("\nDescoberta de hosts cancelada pelo usuário.")
-        return active_hosts
+            network = ipaddress.ip_network(self.network, strict=False)
+            ips = [str(ip) for ip in network.hosts()]
+
+            with ThreadPoolExecutor(max_workers=100) as executor:
+                results = executor.map(self.ping_host, ips)
+                for ip, is_active in zip(ips, results):
+                    if is_active:
+                        active_hosts.append(ip)
+                        logging.info(f"Host ativo encontrado: {ip}")
+
+            return active_hosts
+        except ValueError as e:
+            logging.error(f"Rede inválida: {e}")
+            return []
+        except Exception as e:
+            logging.error(f"Erro ao descobrir hosts na rede {self.network}: {e}")
+            return []

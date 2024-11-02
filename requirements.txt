@@ -1,5 +1,9 @@
+python-nmap
 PyQt5
 pymongo
 psycopg2-binary
 scapy
 netifaces
+nvdlib
+requests
+jinja2
